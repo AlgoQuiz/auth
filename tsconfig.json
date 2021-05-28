@@ -50,6 +50,7 @@
     // "typeRoots": [],                             /* List of folders to include type definitions from. */
     "types": [
       "@types/jsonwebtoken",
+      "@types/bcryptjs",
       "@types/mongoose",
       "@types/express",
       "@types/node"
