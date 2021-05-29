@@ -1,18 +1,24 @@
+import session from "express-session";
 import express, { Application } from "express";
 import { config as dotenvConfig } from "dotenv";
 
 import connectDB from "./config/db";
 import UserRouter from "./routes/user";
-import { errorHandler } from "./middlewares";
+import redisAdapter from "./config/redis";
+import { SESSION_OPTIONS } from "./config/session";
 
 const app: Application = express();
 
-dotenvConfig();
-
-connectDB();
 app.use(express.json());
+// Init env variables
+dotenvConfig();
+// Connect to MongoDB
+connectDB();
+// Redis config
+const store = redisAdapter();
 
-app.use(errorHandler);
+// @ts-ignore
+app.use(session({ ...SESSION_OPTIONS, store }));
 
 app.use("/auth", UserRouter);
 
