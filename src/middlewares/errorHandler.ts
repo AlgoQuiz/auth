@@ -1,28 +1,25 @@
-import { Request, Response, NextFunction } from "express";
-import { ErrorResponse } from "../utils";
+import { RequestHandler, Request, Response, NextFunction } from "express";
 
-export const errorHandler = (
+export const catchAsync =
+  (handler: RequestHandler) =>
+  (...args: [Request, Response, NextFunction]) =>
+    // @ts-ignore
+    handler(...args).catch(args[2]);
+
+export const notFound = (req: Request, res: Response, next: NextFunction) =>
+  res.status(404).json({ message: "Not Found" });
+
+export const serverError = (
   err: any,
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  let error = { ...err };
-
-  error.message = err.message;
-
-  if (err.code === 11000) {
-    const message = `Duplicate Field value entered`;
-    error = new ErrorResponse(message, 400);
+  if (!err.status) {
+    console.error(err.stack);
   }
 
-  if (err.name === "ValidationError") {
-    const [message] = Object.values(err.errors).map((val: any) => val.message);
-    error = new ErrorResponse(message, 400);
-  }
-
-  res.status(error.statusCode || 500).json({
-    success: false,
-    error: error.message || "Server Error",
-  });
+  res
+    .status(err.status || 500)
+    .json({ message: err.message || "Internal Server Error" });
 };

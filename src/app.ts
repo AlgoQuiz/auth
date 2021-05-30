@@ -3,8 +3,8 @@ import express, { Application } from "express";
 import { config as dotenvConfig } from "dotenv";
 
 import { getSessionOptions, redisAdapter, connectDB } from "./config";
-import { login, register, me, reset } from "./routes";
-import { active } from "./middlewares";
+import { login, register, me, reset, verify } from "./routes";
+import { active, notFound, serverError } from "./middlewares";
 
 const app: Application = express();
 
@@ -23,5 +23,9 @@ app.use(login);
 app.use(register);
 app.use(me);
 app.use(reset);
+app.use(verify);
+
+app.use(notFound);
+app.use(serverError);
 
 export default app;

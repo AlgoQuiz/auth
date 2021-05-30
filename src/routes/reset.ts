@@ -1,11 +1,13 @@
 import { Router, Request, Response } from "express";
+
 import {
   validate,
   forgotPasswordSchema,
   resetPasswordSchema,
 } from "../validation";
 import { User, PasswordReset } from "../models";
-import { sendMail, BadRequest, resetPassword, catchAsync } from "../services";
+import { sendMail, BadRequest, resetPassword } from "../services";
+import { catchAsync } from "../middlewares";
 
 const router = Router();
 
