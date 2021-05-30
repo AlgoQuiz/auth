@@ -1,60 +1,80 @@
-import jwt, { Secret } from "jsonwebtoken";
-import bcrypt from "bcryptjs";
+import { Schema, model, Document, Model } from "mongoose";
+import { hash, compare } from "bcryptjs";
+import { BinaryLike, createHash, createHmac, timingSafeEqual } from "crypto";
+import { APP_ORIGIN } from "../constants";
 
-import mongoose, { Schema, Document } from "mongoose";
-
-export interface UserInterface extends Document {
-  name: string;
+const BCRYPT_WORK_FACTOR = 12;
+// Twelve hours
+const EMAIL_VERIFICATION_TIMEOUT = 1000 * 60 * 60 * 12;
+export interface UserDocument extends Document {
   email: string;
+  name: string;
   password: string;
-  id: string;
-  matchPassword: (password: any) => any;
+  verifiedAt: Date;
+  matchesPassword: (password: string) => Promise<boolean>;
+  verificationUrl: () => string;
 }
 
-const UserSchema: Schema = new Schema({
-  username: {
-    type: String,
-    required: [true, "Please provide username"],
-  },
-  email: {
-    type: String,
-    required: [true, "Please provide email address"],
-    unique: true,
-    match: [
-      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-      "Please provide a valid email",
-    ],
-  },
-  password: {
-    type: String,
-    required: [true, "Please add a password"],
-    minlength: 6,
-    select: false,
-  },
-});
+interface UserModel extends Model<UserDocument> {
+  signVerificationUrl: (url: string) => string;
+  hasValidVerificationUrl: (path: string, query: any) => boolean;
+}
 
-UserSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) {
-    next();
+const userSchema = new Schema(
+  {
+    email: String,
+    name: String,
+    password: String,
+    verifiedAt: Date,
+  },
+  {
+    timestamps: true,
   }
+);
 
-  const salt = await bcrypt.genSalt(10);
-  // @ts-ignore
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
+userSchema.pre<UserDocument>("save", async function () {
+  if (this.isModified("password")) {
+    this.password = await hash(this.password, BCRYPT_WORK_FACTOR);
+  }
 });
 
-UserSchema.methods.matchPassword = async function (password) {
+userSchema.methods.matchesPassword = function (password: string) {
   // @ts-ignore
-  return await bcrypt.compare(password, this.password);
+
+  return compare(password, this.password);
 };
 
-UserSchema.methods.getSignedJwtToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET as Secret, {
-    expiresIn: process.env.JWT_EXPIRE,
-  });
+userSchema.methods.verificationUrl = function () {
+  // @ts-ignore
+
+  const token = createHash("sha1").update(this.email).digest("hex");
+  const expires = Date.now() + EMAIL_VERIFICATION_TIMEOUT;
+
+  const url = `${APP_ORIGIN}/email/verify?id=${this.id}&token=${token}&expires=${expires}`;
+  const signature = User.signVerificationUrl(url);
+
+  return `${url}&signature=${signature}`;
 };
 
-const User = mongoose.model<UserInterface>("User", UserSchema);
+userSchema.statics.signVerificationUrl = (url: string) =>
+  createHmac("sha256", process.env.APP_SECRET as BinaryLike)
+    .update(url)
+    .digest("hex");
 
-export default User;
+userSchema.statics.hasValidVerificationUrl = (path: string, query: any) => {
+  const url = `${APP_ORIGIN}${path}`;
+  const original = url.slice(0, url.lastIndexOf("&"));
+  const signature = User.signVerificationUrl(original);
+
+  return (
+    timingSafeEqual(Buffer.from(signature), Buffer.from(query.signature)) &&
+    +query.expires > Date.now()
+  );
+};
+
+userSchema.set("toJSON", {
+  // @ts-ignore
+  transform: (doc, { __v, password, ...rest }, options) => rest,
+});
+
+export const User = model<UserDocument, UserModel>("User", userSchema);
