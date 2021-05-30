@@ -1,42 +1,41 @@
 import { Request, Response, NextFunction } from "express";
-import jwt, { Secret } from "jsonwebtoken";
+import {
+  isLoggedIn,
+  logOut,
+  BadRequest,
+  Unauthorized,
+  catchAsync,
+} from "../services";
 
-import User from "../models/User";
-import { ErrorResponse } from "../utils";
-
-export const authMiddleware = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  let token;
-
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
-    token = req.headers.authorization.split(" ")[1];
+export const guest = (req: Request, res: Response, next: NextFunction) => {
+  if (isLoggedIn(req)) {
+    return next(new BadRequest("You are already logged in"));
   }
 
-  if (!token) {
-    return next(new ErrorResponse("Not authorized to access this route", 401));
+  next();
+};
+
+export const auth = (req: Request, res: Response, next: NextFunction) => {
+  if (!isLoggedIn(req)) {
+    return next(new Unauthorized("You must be logged in"));
   }
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as Secret);
+  next();
+};
 
-    // @ts-ignore
-    const user = await User.findById(decoded.id);
+export const active = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    if (isLoggedIn(req)) {
+      const now = Date.now();
+      const { createdAt } = req.session as any;
 
-    if (!user) {
-      return next(new ErrorResponse("No user found with this id", 404));
+      if (now > createdAt + process.env.SESSION_ABSOLUTE_TIMEOUT) {
+        await logOut(req, res);
+
+        return next(new Unauthorized("Session expired"));
+      }
     }
 
-    // @ts-ignore
-    req.user = user;
-
     next();
-  } catch (err) {
-    return next(new ErrorResponse("Not authorized to access this router", 401));
   }
-};
+);
