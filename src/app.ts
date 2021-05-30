@@ -3,7 +3,7 @@ import express, { Application } from "express";
 import { config as dotenvConfig } from "dotenv";
 
 import { getSessionOptions, redisAdapter, connectDB } from "./config";
-import { login, register, me } from "./routes";
+import { login, register, me, reset } from "./routes";
 import { active } from "./middlewares";
 
 const app: Application = express();
@@ -22,5 +22,6 @@ app.use(active);
 app.use(login);
 app.use(register);
 app.use(me);
+app.use(reset);
 
 export default app;
