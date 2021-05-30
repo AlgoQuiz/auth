@@ -1,10 +1,20 @@
 import nodemailer, { SendMailOptions } from "nodemailer";
-import { SMTP_OPTIONS, MAIL_FROM } from "../constants";
 
-const transporter = nodemailer.createTransport(SMTP_OPTIONS);
+export const sendMail = (options: SendMailOptions) => {
+  const SMTP_OPTIONS = {
+    host: process.env.SMTP_HOST,
+    port: process.env.SMTP_PORT as unknown as number,
+    secure: false,
+    auth: {
+      user: process.env.SMTP_USERNAME,
+      pass: process.env.SMTP_PASSWORD,
+    },
+  };
 
-export const sendMail = (options: SendMailOptions) =>
-  transporter.sendMail({
+  const transporter = nodemailer.createTransport(SMTP_OPTIONS);
+
+  return transporter.sendMail({
     ...options,
-    from: MAIL_FROM,
+    from: `noreply@${process.env.APP_HOSTNAME}`,
   });
+};
