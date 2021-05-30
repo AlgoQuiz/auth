@@ -6,6 +6,7 @@ import { APP_ORIGIN } from "../constants";
 const BCRYPT_WORK_FACTOR = 12;
 // Twelve hours
 const EMAIL_VERIFICATION_TIMEOUT = 1000 * 60 * 60 * 12;
+
 export interface UserDocument extends Document {
   email: string;
   name: string;
@@ -40,13 +41,11 @@ userSchema.pre<UserDocument>("save", async function () {
 
 userSchema.methods.matchesPassword = function (password: string) {
   // @ts-ignore
-
   return compare(password, this.password);
 };
 
 userSchema.methods.verificationUrl = function () {
   // @ts-ignore
-
   const token = createHash("sha1").update(this.email).digest("hex");
   const expires = Date.now() + EMAIL_VERIFICATION_TIMEOUT;
 
