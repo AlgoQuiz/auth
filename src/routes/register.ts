@@ -1,7 +1,7 @@
 import { Router, Response, Request } from "express";
 
-import { guest } from "../middlewares";
-import { catchAsync, BadRequest, logIn, sendMail } from "../services";
+import { guest, catchAsync } from "../middlewares";
+import { BadRequest, logIn, sendMail } from "../services";
 import { User } from "../models";
 import { validate, registerSchema } from "../validation";
 

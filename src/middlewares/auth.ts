@@ -1,11 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import {
-  isLoggedIn,
-  logOut,
-  BadRequest,
-  Unauthorized,
-  catchAsync,
-} from "../services";
+
+import { isLoggedIn, logOut, BadRequest, Unauthorized } from "../services";
+import { catchAsync } from "../middlewares/errorHandler";
 
 export const guest = (req: Request, res: Response, next: NextFunction) => {
   if (isLoggedIn(req)) {

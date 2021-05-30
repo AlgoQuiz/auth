@@ -1,6 +1,6 @@
 import { Router, Response, Request } from "express";
-import { auth } from "../middlewares";
-import { catchAsync } from "../services";
+
+import { auth, catchAsync } from "../middlewares";
 import { User } from "../models";
 
 const router = Router();

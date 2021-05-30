@@ -1,8 +1,8 @@
 import { Router, Response, Request } from "express";
-import { guest, auth } from "../middlewares";
-import { catchAsync, BadRequest, logIn, logOut } from "../services";
-import { User } from "../models";
 
+import { guest, auth, catchAsync } from "../middlewares";
+import { BadRequest, logIn, logOut } from "../services";
+import { User } from "../models";
 import { validate, loginSchema } from "../validation";
 
 const router = Router();
