@@ -2,7 +2,7 @@ import session from "express-session";
 import connectRedis from "connect-redis";
 import Redis from "ioredis";
 
-const redisAdapter = () => {
+export const redisAdapter = () => {
   try {
     const RedisStore = connectRedis(session);
     const client = new Redis({
@@ -16,5 +16,3 @@ const redisAdapter = () => {
     console.error(`Redis store creation failed, ${error}`);
   }
 };
-
-export default redisAdapter;
