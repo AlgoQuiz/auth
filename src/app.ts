@@ -2,10 +2,8 @@ import session from "express-session";
 import express, { Application } from "express";
 import { config as dotenvConfig } from "dotenv";
 
-import connectDB from "./config/db";
-import UserRouter from "./routes/user";
-import redisAdapter from "./config/redis";
-import { SESSION_OPTIONS } from "./config/session";
+import { getSessionOptions, redisAdapter, connectDB } from "./config";
+import { login } from "./routes";
 
 const app: Application = express();
 
@@ -17,9 +15,8 @@ connectDB();
 // Redis config
 const store = redisAdapter();
 
-// @ts-ignore
-app.use(session({ ...SESSION_OPTIONS, store }));
+app.use(session({ ...getSessionOptions(process.env), store }));
 
-app.use("/auth", UserRouter);
+app.use(login);
 
 export default app;
